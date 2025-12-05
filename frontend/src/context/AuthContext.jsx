@@ -6,21 +6,21 @@ export const AuthProvider = ({ children }) => {
   const [token, setToken] = useState(localStorage.getItem("token") || null);
   const [user, setUser] = useState(null);
 
-  // Login → save token & user
-  const login = (tokenValue, userData) => {
-    localStorage.setItem("token", tokenValue);
-    setToken(tokenValue);
+  // LOGIN — save token + user
+  const login = (token, userData) => {
+    localStorage.setItem("token", token);
+    setToken(token);
     setUser(userData);
   };
 
-  // Logout
+  // LOGOUT — clear everything
   const logout = () => {
     localStorage.removeItem("token");
     setToken(null);
     setUser(null);
   };
 
-  // Load user if token exists
+  // Load user from backend when token exists
   useEffect(() => {
     if (!token) return;
 
@@ -29,18 +29,13 @@ export const AuthProvider = ({ children }) => {
         const res = await fetch(
           `${import.meta.env.VITE_BACKEND_URL}/api/auth/me`,
           {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
+            headers: { Authorization: `Bearer ${token}` }
           }
         );
 
         const data = await res.json();
-
-        // Backend returns: { user: { ...fields } }
-        setUser(data.user ?? data);
+        setUser(data.user);
       } catch (err) {
-        console.error("Failed to load user:", err);
         logout();
       }
     };
@@ -49,15 +44,7 @@ export const AuthProvider = ({ children }) => {
   }, [token]);
 
   return (
-    <AuthContext.Provider
-      value={{
-        token,
-        user,
-        setUser,     // 🔥 FIX ADDED
-        login,
-        logout,
-      }}
-    >
+    <AuthContext.Provider value={{ token, user, setUser, login, logout }}>
       {children}
     </AuthContext.Provider>
   );
