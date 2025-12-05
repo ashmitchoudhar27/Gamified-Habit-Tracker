@@ -7,3 +7,46 @@
 .animate-pop {
   animation: pop 0.3s ease-out;
 }
+/* paste into src/index.css or global css */
+.neon-text {
+  text-shadow: 0 2px 12px rgba(124,58,237,0.6);
+}
+.neon-card {
+  box-shadow: 0 8px 30px rgba(124,58,237,0.08);
+}
+/* === custom animations for waves & floating badges === */
+@keyframes wave {
+  0% { transform: translateY(0px); }
+  50% { transform: translateY(-8px); }
+  100% { transform: translateY(0px); }
+}
+.animate-wave { animation: wave 6s ease-in-out infinite; }
+.animate-wave-slow { animation: wave 10s ease-in-out infinite; }
+
+@keyframes floatIn {
+  0% { transform: translateY(10px); opacity: 0; }
+  100% { transform: translateY(0px); opacity: 1; }
+}
+
+/* a tiny utility for subtle pulses */
+@keyframes softPulse {
+  0% { transform: scale(1); opacity: .9; }
+  50% { transform: scale(1.01); opacity: 1; }
+  100% { transform: scale(1); opacity: .9; }
+}
+.animate-soft-pulse { animation: softPulse 3.5s ease-in-out infinite; }
+
+/* small ring animation helper (optional) */
+@keyframes ring {
+  0% { stroke-dashoffset: 200; }
+  100% { stroke-dashoffset: 0; }
+}
+/* RESET DEFAULT BROWSER MARGIN */
+html, body {
+  margin: 0 !important;
+  padding: 0 !important;
+  background-color: #0D0D10; /* match your dark theme */
+  overflow-x: hidden !important;
+  height: 100%;
+}
+

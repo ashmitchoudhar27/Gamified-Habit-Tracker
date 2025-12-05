@@ -1,10 +1,10 @@
+// backend/middlewares/authMiddleware.js
 const jwt = require("jsonwebtoken");
 const User = require("../models/User");
 
 exports.protect = async (req, res, next) => {
   let token;
 
-  // Check if Bearer token is present
   if (
     req.headers.authorization &&
     req.headers.authorization.startsWith("Bearer")
@@ -12,23 +12,18 @@ exports.protect = async (req, res, next) => {
     token = req.headers.authorization.split(" ")[1];
   }
 
-  if (!token) {
-    return res.status(401).json({ error: "Not authorized, token missing" });
-  }
+  if (!token) return res.status(401).json({ error: "Not authorized" });
 
   try {
-    // Verify token
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
-    // Attach user to request
     req.user = await User.findById(decoded.id).select("-password");
 
-    if (!req.user) {
-      return res.status(401).json({ error: "User not found" });
-    }
+    if (!req.user) return res.status(401).json({ error: "User not found" });
 
     next();
   } catch (err) {
-    return res.status(401).json({ error: "Invalid or expired token" });
+    console.error("AUTH ERROR:", err);
+    res.status(401).json({ error: "Invalid token" });
   }
 };

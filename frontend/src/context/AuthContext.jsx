@@ -6,21 +6,21 @@ export const AuthProvider = ({ children }) => {
   const [token, setToken] = useState(localStorage.getItem("token") || null);
   const [user, setUser] = useState(null);
 
-  // LOGIN — save token + user
   const login = (token, userData) => {
     localStorage.setItem("token", token);
     setToken(token);
-    setUser(userData);
+    setUser(userData); // <-- IMPORTANT
   };
 
-  // LOGOUT — clear everything
-  const logout = () => {
-    localStorage.removeItem("token");
-    setToken(null);
-    setUser(null);
-  };
+const logout = () => {
+  localStorage.removeItem("token");
+  setToken(null);
+  setUser(null);
 
-  // Load user from backend when token exists
+  // Force redirect to homepage
+  window.location.href = "/";
+};
+
   useEffect(() => {
     if (!token) return;
 
@@ -29,7 +29,9 @@ export const AuthProvider = ({ children }) => {
         const res = await fetch(
           `${import.meta.env.VITE_BACKEND_URL}/api/auth/me`,
           {
-            headers: { Authorization: `Bearer ${token}` }
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
           }
         );
 
@@ -44,7 +46,7 @@ export const AuthProvider = ({ children }) => {
   }, [token]);
 
   return (
-    <AuthContext.Provider value={{ token, user, setUser, login, logout }}>
+    <AuthContext.Provider value={{ token, user, login, logout, setUser }}>
       {children}
     </AuthContext.Provider>
   );
