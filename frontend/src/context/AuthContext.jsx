@@ -1,4 +1,5 @@
-import { createContext, useContext, useState, useEffect } from "react";
+// src/context/AuthContext.jsx
+import React, { createContext, useContext, useEffect, useState } from "react";
 
 const AuthContext = createContext();
 
@@ -6,47 +7,42 @@ export const AuthProvider = ({ children }) => {
   const [token, setToken] = useState(localStorage.getItem("token") || null);
   const [user, setUser] = useState(null);
 
-  const login = (token, userData) => {
-    localStorage.setItem("token", token);
-    setToken(token);
-    setUser(userData); // <-- IMPORTANT
+  // login expects (token, userData) OR (responseObject) depending on your login flow
+  const login = (tokenValue, userData) => {
+    if (!tokenValue) return;
+    localStorage.setItem("token", tokenValue);
+    setToken(tokenValue);
+    if (userData) setUser(userData);
   };
 
-const logout = () => {
-  localStorage.removeItem("token");
-  setToken(null);
-  setUser(null);
+  const logout = () => {
+    localStorage.removeItem("token");
+    setToken(null);
+    setUser(null);
+    // optional: redirect handled by components
+  };
 
-  // Force redirect to homepage
-  window.location.href = "/";
-};
-
+  // Fetch current user when token exists
   useEffect(() => {
     if (!token) return;
-
-    const fetchUser = async () => {
+    const fetchMe = async () => {
       try {
-        const res = await fetch(
-          `${import.meta.env.VITE_BACKEND_URL}/api/auth/me`,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
-
+        const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/auth/me`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
         const data = await res.json();
-        setUser(data.user);
+        if (data.user) setUser(data.user);
       } catch (err) {
-        logout();
+        console.error("Auth fetchMe error:", err);
+        // if error, clear token
+        // logout();
       }
     };
-
-    fetchUser();
+    fetchMe();
   }, [token]);
 
   return (
-    <AuthContext.Provider value={{ token, user, login, logout, setUser }}>
+    <AuthContext.Provider value={{ token, user, setUser, login, logout }}>
       {children}
     </AuthContext.Provider>
   );
