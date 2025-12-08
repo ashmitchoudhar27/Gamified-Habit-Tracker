@@ -1,26 +1,27 @@
-import { useEffect, useState } from "react";
+// src/pages/Habits.jsx
+import React, { useEffect, useState } from "react";
+import Sidebar from "../components/Sidebar";
 import { useAuth } from "../context/AuthContext";
 
 export default function Habits() {
-  const { token } = useAuth();
+  const { token, user, setUser } = useAuth();
   const [habits, setHabits] = useState([]);
-
   const API = import.meta.env.VITE_BACKEND_URL;
 
   useEffect(() => {
+    if (!token) return;
     const fetchHabits = async () => {
       try {
         const res = await fetch(`${API}/api/habits`, {
           headers: { Authorization: `Bearer ${token}` },
         });
-
+        if (!res.ok) return;
         const data = await res.json();
-        setHabits(data);
-      } catch (error) {
-        console.error("Error fetching habits:", error);
+        setHabits(data || []);
+      } catch (err) {
+        console.error("fetchHabits error", err);
       }
     };
-
     fetchHabits();
   }, [token]);
 
@@ -30,120 +31,56 @@ export default function Habits() {
         method: "POST",
         headers: { Authorization: `Bearer ${token}` },
       });
-
-      const data = await res.json();
-
       if (!res.ok) {
-        alert(data.error || "Something went wrong completing habit.");
+        const t = await res.text();
+        alert("Something went wrong completing the habit: " + (t || res.status));
         return;
       }
-
-      setHabits((prev) =>
-        prev.map((h) => (h._id === id ? { ...h, ...data } : h))
-      );
+      const data = await res.json();
+      // server returns xp/level/badges etc.
+      if (data) {
+        // update user object in context with returned fields if present
+        setUser((u) => ({ ...(u || {}), xp: data.xp ?? u?.xp, level: data.level ?? u?.level, badges: data.badges ?? u?.badges }));
+      }
+      // refresh habit list
+      setHabits((prev) => prev.map(h => (h._id === id ? { ...h, streak: data?.streak ?? h.streak, totalCompletions: data?.totalCompletions ?? h.totalCompletions, lastCompleted: new Date().toISOString() } : h)));
     } catch (err) {
-      console.error("Error completing habit:", err);
-    }
-  };
-
-  const deleteHabit = async (id) => {
-    if (!confirm("Are you sure you want to delete this habit?")) return;
-
-    try {
-      const res = await fetch(`${API}/api/habits/${id}`, {
-        method: "DELETE",
-        headers: { Authorization: `Bearer ${token}` },
-      });
-
-      const data = await res.json();
-
-      if (!res.ok) {
-        alert(data.error || "Failed to delete habit.");
-        return;
-      }
-
-      setHabits((prev) => prev.filter((h) => h._id !== id));
-    } catch (error) {
-      console.error("Error deleting habit:", error);
+      console.error("completeHabit error", err);
+      alert("Something went wrong completing the habit.");
     }
   };
 
   return (
-    <div className="min-h-screen w-full bg-[#0D0D10] px-6 py-10 overflow-x-hidden">
-      
-      <h1 className="text-4xl font-bold mb-10 tracking-wide text-white">
-        Your Habits
-      </h1>
+    <div className="min-h-screen bg-gray-50">
+      <Sidebar />
+      <main className="ml-56 p-8 max-w-6xl mx-auto">
+        <h1 className="text-3xl font-bold mb-6">Your Habits</h1>
 
-      {habits.length === 0 ? (
-        <p className="text-gray-400 text-lg">No habits added yet.</p>
-      ) : (
-        <div className="space-y-6">
-          {habits.map((habit) => (
-            <div
-              key={habit._id}
-              className="
-                p-6 rounded-2xl border border-white/10 
-                backdrop-blur-xl 
-                bg-white/5
-                shadow-[0_0_25px_rgba(80,0,200,0.15)]
-                hover:shadow-[0_0_40px_rgba(120,0,255,0.35)]
-                transition-all duration-300
-              "
-            >
-              <h2 className="text-2xl font-semibold text-white drop-shadow-sm">
-                {habit.title}
-              </h2>
+        {habits.length === 0 ? (
+          <div className="text-gray-600">No habits yet. Add one!</div>
+        ) : (
+          habits.map((h) => (
+            <div key={h._id} className="bg-white p-6 rounded-lg shadow mb-4 flex justify-between items-center">
+              <div>
+                <h3 className="text-xl font-semibold">{h.title}</h3>
+                <div className="text-sm text-gray-500">Category: {h.category}</div>
+                <div className="mt-2 text-sm text-gray-600">Streak: 🔥 {h.streak ?? 0} days • Completions: {h.totalCompletions ?? 0}</div>
+              </div>
 
-              <p className="text-gray-300 mt-1">
-                <span className="font-medium text-gray-200">Category:</span>{" "}
-                {habit.category}
-              </p>
-
-              <p className="text-gray-300 mt-2">
-                <span className="font-medium text-gray-200">Streak:</span> 🔥{" "}
-                {habit.streak} days
-                <span className="ml-4 font-medium text-gray-200">
-                  Completions:
-                </span>{" "}
-                {habit.totalCompletions}
-              </p>
-
-              <div className="flex gap-4 mt-6">
-                {/* Complete Button */}
-                <button
-                  onClick={() => completeHabit(habit._id)}
-                  className="
-                    px-6 py-2 rounded-xl 
-                    bg-purple-600 hover:bg-purple-700 
-                    text-white font-medium 
-                    shadow-[0_0_10px_rgba(150,0,255,0.4)]
-                    hover:shadow-[0_0_20px_rgba(180,0,255,0.7)]
-                    transition-all duration-300
-                  "
-                >
-                  Complete ✓
-                </button>
-
-                {/* Delete Button */}
-                <button
-                  onClick={() => deleteHabit(habit._id)}
-                  className="
-                    px-6 py-2 rounded-xl 
-                    bg-red-600 hover:bg-red-700 
-                    text-white font-medium
-                    shadow-[0_0_10px_rgba(255,40,40,0.5)]
-                    hover:shadow-[0_0_20px_rgba(255,40,40,0.8)]
-                    transition-all duration-300
-                  "
-                >
-                  Delete 🗑
-                </button>
+              <div className="flex gap-3">
+                <button onClick={() => completeHabit(h._id)} className="bg-purple-600 text-white px-4 py-2 rounded-md">Complete ✔</button>
+                <button onClick={async () => {
+                  if(!confirm("Delete habit?")) return;
+                  try {
+                    const res = await fetch(`${API}/api/habits/${h._id}`, { method: "DELETE", headers: { Authorization: `Bearer ${token}` } });
+                    if (res.ok) setHabits((prev) => prev.filter(x => x._id !== h._id));
+                  } catch (err) { console.error(err); alert("Failed to delete");}
+                }} className="bg-red-500 text-white px-4 py-2 rounded-md">Delete 🗑</button>
               </div>
             </div>
-          ))}
-        </div>
-      )}
+          ))
+        )}
+      </main>
     </div>
   );
 }

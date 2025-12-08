@@ -13,6 +13,8 @@ export default function App() {
       <Route path="/dashboard" element={<Dashboard />} />
       <Route path="/habits" element={<Habits />} />
       <Route path="/add-habit" element={<AddHabit />} />
+      <Route path="/login" element={<Login />} />
+
     </Routes>
   );
 }

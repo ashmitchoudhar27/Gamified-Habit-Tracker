@@ -1,75 +1,103 @@
+// src/pages/Register.jsx
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 
 export default function Register() {
   const navigate = useNavigate();
-  const { register } = useAuth();
+  const { login } = useAuth();
 
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  const handleRegister = async (e) => {
+  const API = import.meta.env.VITE_BACKEND_URL;
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    setLoading(true);
 
     try {
-      await register(name, email, password);
-      alert("Registration successful!");
-      navigate("/");
-    } catch (error) {
-      alert(error.response?.data?.error || "Registration failed");
+      const res = await fetch(`${API}/api/auth/register`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, email, password }),
+      });
+      const data = await res.json();
+
+      if (res.ok && data.token) {
+        // automatically login after register
+        login(data.token, data.user);
+        navigate("/dashboard", { replace: true });
+      } else {
+        alert(data.error || "Registration failed");
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Network error");
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gray-900 px-4">
-      <form
-        onSubmit={handleRegister}
-        className="bg-gray-800 p-8 rounded-xl shadow-xl w-full max-w-sm"
-      >
-        <h1 className="text-3xl text-white font-bold text-center mb-6">
-          Register
-        </h1>
+    <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
+      <div className="w-full max-w-md bg-white p-8 rounded-2xl shadow-sm border border-gray-200">
+        <h1 className="text-2xl font-semibold mb-6 text-gray-900">Create an account</h1>
 
-        <input
-          type="text"
-          placeholder="Name"
-          className="w-full p-3 mb-4 rounded bg-gray-700 text-white"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-        />
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="block text-sm text-gray-600 mb-1">Name</label>
+            <input
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              required
+              className="w-full p-3 rounded-lg border border-gray-200 bg-gray-50 focus:outline-none focus:ring-2 focus:ring-purple-200"
+              placeholder="Your name"
+            />
+          </div>
 
-        <input
-          type="email"
-          placeholder="Email"
-          className="w-full p-3 mb-4 rounded bg-gray-700 text-white"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-        />
+          <div>
+            <label className="block text-sm text-gray-600 mb-1">Email</label>
+            <input
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+              type="email"
+              className="w-full p-3 rounded-lg border border-gray-200 bg-gray-50 focus:outline-none focus:ring-2 focus:ring-purple-200"
+              placeholder="you@example.com"
+            />
+          </div>
 
-        <input
-          type="password"
-          placeholder="Password"
-          className="w-full p-3 mb-4 rounded bg-gray-700 text-white"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-        />
+          <div>
+            <label className="block text-sm text-gray-600 mb-1">Password</label>
+            <input
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+              type="password"
+              className="w-full p-3 rounded-lg border border-gray-200 bg-gray-50 focus:outline-none focus:ring-2 focus:ring-purple-200"
+              placeholder="At least 6 characters"
+            />
+          </div>
 
-        <button
-          type="submit"
-          className="w-full bg-green-600 hover:bg-green-700 text-white py-2 rounded"
-        >
-          Register
-        </button>
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full bg-purple-500 hover:bg-purple-600 text-white p-3 rounded-lg font-medium transition"
+          >
+            {loading ? "Creating..." : "Create account"}
+          </button>
+        </form>
 
-        <p className="text-gray-300 text-sm text-center mt-4">
+        <p className="text-sm text-gray-600 mt-4 text-center">
           Already have an account?{" "}
-          <Link to="/" className="text-blue-400 hover:underline">
+          <Link to="/login" className="text-purple-600 font-medium">
             Login
           </Link>
         </p>
-      </form>
+      </div>
     </div>
   );
 }

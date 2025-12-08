@@ -10,24 +10,26 @@ export default function Dashboard() {
   const { token, user, logout, setUser } = useAuth();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
-
   const API = import.meta.env.VITE_BACKEND_URL;
 
-  // Load user data
+  // Fetch user on load
   useEffect(() => {
-    if (!token) return navigate("/login", { replace: true });
+    if (!token) {
+      navigate("/login");
+      return;
+    }
 
     const fetchUser = async () => {
       try {
         const res = await fetch(`${API}/api/auth/me`, {
           headers: { Authorization: `Bearer ${token}` },
         });
-
         const data = await res.json();
+
         if (data.user) setUser(data.user);
-        else navigate("/login", { replace: true });
-      } catch (err) {
-        navigate("/login", { replace: true });
+        else navigate("/login");
+      } catch {
+        navigate("/login");
       }
 
       setLoading(false);
@@ -38,7 +40,7 @@ export default function Dashboard() {
 
   if (loading)
     return (
-      <div className="min-h-screen flex items-center justify-center text-gray-600 text-lg">
+      <div className="min-h-screen flex items-center justify-center text-gray-500 text-lg">
         Loading...
       </div>
     );
@@ -46,120 +48,93 @@ export default function Dashboard() {
   if (!user)
     return (
       <div className="min-h-screen flex items-center justify-center text-red-500">
-        Unauthorized. Please login.
+        Unauthorized.
       </div>
     );
 
-  // XP / Level values
+  // XP & Progress
   const xp = user.xp ?? 0;
   const level = user.level ?? 1;
   const xpRequired = level * 100;
   const progressPercent = Math.min((xp / xpRequired) * 100, 100);
 
-  const badges = user.badges || [];
-
   return (
-    <div className="min-h-screen bg-gray-100 text-gray-900 flex">
+    <div className="min-h-screen bg-[#eef1f6] flex overflow-hidden">
+
+      {/* Sidebar */}
       <Sidebar />
 
-      <div className="flex-1 ml-[260px] pt-24 px-10 pb-10 max-w-7xl">
+      {/* MAIN CONTENT */}
+      <div className="flex-1 px-10 py-10 lg:px-16 max-w-[1400px] ml-56">
 
 
         {/* Header */}
-        <div className="flex justify-between items-center mb-10">
-          <h1 className="text-4xl font-semibold tracking-tight">Dashboard</h1>
+        <div className="flex justify-between mb-12 items-center">
+          <h1 className="text-4xl font-bold text-gray-900">Dashboard</h1>
 
-          <button
-            onClick={() => {
-              logout();
-              navigate("/", { replace: true });
-            }}
-            className="
-              bg-red-500 hover:bg-red-600 
-              text-white px-5 py-2 rounded-lg 
-              shadow-sm hover:shadow-md transition-all
-            "
-          >
-            Logout
-          </button>
+          <div className="flex items-center gap-4">
+            <span className="text-gray-600 text-sm">
+              {user.username} • Level {level}
+            </span>
+
+            <button
+              onClick={() => {
+                logout();
+                navigate("/");
+              }}
+              className="px-5 py-2 bg-red-500 text-white rounded-xl shadow-sm hover:bg-red-600 transition"
+            >
+              Logout
+            </button>
+          </div>
         </div>
 
-        {/* Welcome Section */}
-        <div
-          className="
-            bg-white/80 backdrop-blur-xl 
-            rounded-2xl p-6 mb-8 
-            border border-gray-200 
-            shadow-[0_8px_20px_rgba(0,0,0,0.05)]
-          "
-        >
+        {/* Welcome Card */}
+        <div className="glass-card mb-10 fade-in">
           <h2 className="text-2xl font-semibold">Welcome back 🎉</h2>
-          <p className="text-gray-500 mt-1">Keep up the great habits!</p>
+          <p className="text-gray-500 mt-1">
+            Keep building great habits — you're doing amazing.
+          </p>
         </div>
 
-        {/* XP Progress */}
-        <div
-          className="
-            bg-white/80 backdrop-blur-xl 
-            rounded-2xl p-6 mb-8 
-            border border-gray-200 
-            shadow-[0_8px_20px_rgba(0,0,0,0.05)]
-          "
-        >
-          <h2 className="text-xl font-semibold mb-4">Your XP Progress</h2>
+        {/* XP PROGRESS */}
+        <div className="glass-card mb-10 fade-in">
+          <h2 className="text-xl font-semibold mb-4">XP Progress</h2>
 
-          <div className="w-full h-4 bg-gray-200 rounded-lg overflow-hidden">
+          <div className="h-3 bg-gray-200 rounded-full overflow-hidden">
             <div
-              className="h-full bg-gradient-to-r from-purple-500 to-purple-400 transition-all duration-700"
               style={{ width: `${progressPercent}%` }}
-            />
+              className="h-full bg-gradient-to-r from-purple-500 to-pink-400 rounded-full transition-all duration-500"
+            ></div>
           </div>
 
-          <p className="mt-3 text-gray-700">
-            XP: <b>{xp}</b> / {xpRequired}
-          </p>
-          <p className="text-gray-700">
-            Level: <b>{level}</b>
+          <p className="text-gray-600 mt-3">
+            XP: <b>{xp}</b> / {xpRequired} • Level <b>{level}</b>
           </p>
         </div>
 
-        {/* Badges */}
-        <div
-          className="
-            bg-white/80 backdrop-blur-xl 
-            rounded-2xl p-6 mb-10 
-            border border-gray-200 
-            shadow-[0_8px_20px_rgba(0,0,0,0.05)]
-          "
-        >
-          <h2 className="text-xl font-semibold mb-4">Your Badges</h2>
+        {/* BADGES */}
+        <div className="glass-card mb-12 fade-in">
+          <h2 className="text-xl font-semibold mb-6">Badges</h2>
 
-          {badges.length === 0 && (
-            <p className="text-gray-400">You haven’t earned any badges yet.</p>
+          {(!user.badges || user.badges.length === 0) && (
+            <p className="text-gray-400">No badges yet. Complete habits to earn them!</p>
           )}
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {badges.map((key, i) => {
-              const info = badgeDetails[key];
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {user.badges?.map((badge, i) => {
+              const info = badgeDetails[badge];
               if (!info) return null;
 
               return (
                 <div
                   key={i}
-                  className="
-                    p-4 bg-white 
-                    border border-gray-200 
-                    rounded-xl shadow-sm 
-                    hover:shadow-md transition-all 
-                    flex gap-4 items-center
-                  "
+                  className="flex items-center gap-4 glass-inner p-5 rounded-2xl border border-white/30 shadow-md hover:shadow-xl transition-all fade-in-up"
                 >
-                  <span className="text-3xl">{info.icon}</span>
+                  <span className="text-4xl">{info.icon}</span>
                   <div>
-                    <h3 className="font-bold text-gray-900">{info.title}</h3>
-                    <p className="text-gray-500 text-sm">
-                      {info.description}
-                    </p>
+                    <h3 className="font-semibold text-gray-800">{info.title}</h3>
+                    <p className="text-gray-500 text-sm">{info.description}</p>
                   </div>
                 </div>
               );
@@ -167,36 +142,99 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* Buttons */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pb-10">
+        {/* ACTION BUTTONS */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+
           <button
             onClick={() => navigate("/add-habit")}
-            className="
-              bg-gradient-to-r from-purple-500 to-purple-400 
-              hover:shadow-lg hover:brightness-105 
-              text-white p-6 rounded-xl 
-              shadow-md transition-all
-            "
+            className="glass-button-purple fade-scale"
           >
             <h3 className="text-xl font-semibold">+ Add New Habit</h3>
-            <p className="text-white/90">Create a new habit today.</p>
+            <p className="text-gray-100 text-sm mt-1">Create a new habit today.</p>
           </button>
 
           <button
             onClick={() => navigate("/habits")}
-            className="
-              bg-gradient-to-r from-blue-500 to-blue-400 
-              hover:shadow-lg hover:brightness-105 
-              text-white p-6 rounded-xl 
-              shadow-md transition-all
-            "
+            className="glass-button-blue fade-scale"
           >
             <h3 className="text-xl font-semibold">View Habits</h3>
-            <p className="text-white/90">See your tracked habits.</p>
+            <p className="text-gray-100 text-sm mt-1">Review your tracked habits.</p>
           </button>
+
         </div>
       </div>
+
+      {/* GLASS UI + ANIMATIONS */}
+      <style>{`
+        .glass-card {
+          background: rgba(255, 255, 255, 0.65);
+          backdrop-filter: blur(20px);
+          padding: 28px;
+          border-radius: 22px;
+          border: 1px solid rgba(255,255,255,0.45);
+          box-shadow: 0 10px 40px rgba(0,0,0,0.08);
+          animation: fadeIn 0.6s ease-out forwards;
+        }
+
+        .glass-inner {
+          background: rgba(255,255,255,0.75);
+          backdrop-filter: blur(15px);
+        }
+
+        .glass-button-purple {
+          background: linear-gradient(135deg, #a855f7, #9333ea);
+          color: white;
+          padding: 40px;
+          border-radius: 22px;
+          text-align: center;
+          box-shadow: 0 8px 30px rgba(147, 51, 234, 0.35);
+          transition: 0.25s;
+        }
+
+        .glass-button-purple:hover {
+          transform: translateY(-4px);
+          box-shadow: 0 12px 40px rgba(147, 51, 234, 0.5);
+        }
+
+        .glass-button-blue {
+          background: linear-gradient(135deg, #3b82f6, #2563eb);
+          color: white;
+          padding: 40px;
+          border-radius: 22px;
+          text-align: center;
+          box-shadow: 0 8px 30px rgba(37, 99, 235, 0.35);
+          transition: 0.25s;
+        }
+
+        .glass-button-blue:hover {
+          transform: translateY(-4px);
+          box-shadow: 0 12px 40px rgba(37, 99, 235, 0.5);
+        }
+
+        /* Animations */
+        @keyframes fadeIn {
+          from { opacity: 0; transform: translateY(12px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+
+        .fade-in {
+          animation: fadeIn 0.6s ease-out;
+        }
+
+        .fade-in-up {
+          animation: fadeIn 0.7s ease-out;
+        }
+
+        .fade-scale {
+          animation: fadeInScale 0.8s ease-out;
+        }
+
+        @keyframes fadeInScale {
+          from { opacity: 0; transform: scale(0.95); }
+          to { opacity: 1; transform: scale(1); }
+        }
+
+      `}</style>
     </div>
-    
   );
 }
