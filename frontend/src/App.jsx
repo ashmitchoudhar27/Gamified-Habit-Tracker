@@ -4,6 +4,8 @@ import Register from "./pages/Register";
 import Dashboard from "./pages/Dashboard";
 import Habits from "./pages/Habits";
 import AddHabit from "./pages/AddHabit";
+import Analytics from "./pages/Analytics";
+
 
 export default function App() {
   return (
@@ -14,6 +16,8 @@ export default function App() {
       <Route path="/habits" element={<Habits />} />
       <Route path="/add-habit" element={<AddHabit />} />
       <Route path="/login" element={<Login />} />
+      <Route path="/analytics" element={<Analytics />} />
+
 
     </Routes>
   );

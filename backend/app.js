@@ -10,6 +10,8 @@ app.use(express.json());
 // ROUTES
 app.use("/api/auth", require("./routes/authRoutes"));
 app.use("/api/habits", require("./routes/habitRoutes"));
+app.use("/api/analytics", require("./routes/analyticsRoutes"));
+
 
 
 module.exports = app;
