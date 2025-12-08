@@ -1,10 +1,9 @@
-// src/pages/Dashboard.jsx
-
 import { useEffect, useState } from "react";
 import { useAuth } from "../context/AuthContext";
 import { useNavigate } from "react-router-dom";
 import Sidebar from "../components/Sidebar";
 import { badgeDetails } from "../utils/badgeDetails";
+import Heatmap from "../components/Heatmap";
 
 export default function Dashboard() {
   const { token, user, logout, setUser } = useAuth();
@@ -12,7 +11,10 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
   const API = import.meta.env.VITE_BACKEND_URL;
 
-  // Fetch user on load
+  const [habitsList, setHabitsList] = useState([]);
+  const [selectedHabitId, setSelectedHabitId] = useState("");
+
+  // Fetch user + habits
   useEffect(() => {
     if (!token) {
       navigate("/login");
@@ -26,8 +28,12 @@ export default function Dashboard() {
         });
         const data = await res.json();
 
-        if (data.user) setUser(data.user);
-        else navigate("/login");
+        if (data.user) {
+          setUser(data.user);
+          loadHabits();
+        } else {
+          navigate("/login");
+        }
       } catch {
         navigate("/login");
       }
@@ -35,24 +41,39 @@ export default function Dashboard() {
       setLoading(false);
     };
 
+    const loadHabits = async () => {
+      try {
+        const res = await fetch(`${API}/api/habits/my`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        const json = await res.json();
+
+        if (json.success) setHabitsList(json.habits);
+      } catch (err) {
+        console.error(err);
+      }
+    };
+
     fetchUser();
   }, [token]);
 
-  if (loading)
+  if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center text-gray-500 text-lg">
         Loading...
       </div>
     );
+  }
 
-  if (!user)
+  if (!user) {
     return (
       <div className="min-h-screen flex items-center justify-center text-red-500">
         Unauthorized.
       </div>
     );
+  }
 
-  // XP & Progress
+  // XP Logic
   const xp = user.xp ?? 0;
   const level = user.level ?? 1;
   const xpRequired = level * 100;
@@ -60,13 +81,10 @@ export default function Dashboard() {
 
   return (
     <div className="min-h-screen bg-[#eef1f6] flex overflow-hidden">
-
-      {/* Sidebar */}
       <Sidebar />
 
-      {/* MAIN CONTENT */}
+      {/* PAGE CONTENT */}
       <div className="flex-1 px-10 py-10 lg:px-16 max-w-[1400px] ml-56">
-
 
         {/* Header */}
         <div className="flex justify-between mb-12 items-center">
@@ -97,7 +115,7 @@ export default function Dashboard() {
           </p>
         </div>
 
-        {/* XP PROGRESS */}
+        {/* XP Progress */}
         <div className="glass-card mb-10 fade-in">
           <h2 className="text-xl font-semibold mb-4">XP Progress</h2>
 
@@ -111,6 +129,30 @@ export default function Dashboard() {
           <p className="text-gray-600 mt-3">
             XP: <b>{xp}</b> / {xpRequired} • Level <b>{level}</b>
           </p>
+        </div>
+
+        {/* HEATMAP SECTION */}
+        <div className="glass-card mb-10 fade-in">
+          <h2 className="text-xl font-semibold mb-4">Habit Heatmap</h2>
+
+          <select
+            className="border px-4 py-2 rounded-lg mb-5 bg-white shadow-sm"
+            value={selectedHabitId}
+            onChange={(e) => setSelectedHabitId(e.target.value)}
+          >
+            <option value="">Select a habit...</option>
+            {habitsList.map((h) => (
+              <option key={h._id} value={h._id}>
+                {h.title}
+              </option>
+            ))}
+          </select>
+
+          {selectedHabitId ? (
+            <Heatmap habitId={selectedHabitId} />
+          ) : (
+            <p className="text-gray-400">Select a habit to view progress.</p>
+          )}
         </div>
 
         {/* BADGES */}
@@ -164,7 +206,7 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* GLASS UI + ANIMATIONS */}
+      {/* GLASS UI & ANIMATIONS */}
       <style>{`
         .glass-card {
           background: rgba(255, 255, 255, 0.65);
@@ -211,7 +253,6 @@ export default function Dashboard() {
           box-shadow: 0 12px 40px rgba(37, 99, 235, 0.5);
         }
 
-        /* Animations */
         @keyframes fadeIn {
           from { opacity: 0; transform: translateY(12px); }
           to { opacity: 1; transform: translateY(0); }
@@ -233,7 +274,6 @@ export default function Dashboard() {
           from { opacity: 0; transform: scale(0.95); }
           to { opacity: 1; transform: scale(1); }
         }
-
       `}</style>
     </div>
   );
