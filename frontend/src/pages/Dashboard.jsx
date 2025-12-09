@@ -3,7 +3,7 @@ import { useAuth } from "../context/AuthContext";
 import { useNavigate } from "react-router-dom";
 import Sidebar from "../components/Sidebar";
 import { badgeDetails } from "../utils/badgeDetails";
-import Heatmap from "../components/Heatmap";
+import CombinedHeatmap from "../components/CombinedHeatmap";
 
 export default function Dashboard() {
   const { token, user, logout, setUser } = useAuth();
@@ -12,7 +12,6 @@ export default function Dashboard() {
   const API = import.meta.env.VITE_BACKEND_URL;
 
   const [habitsList, setHabitsList] = useState([]);
-  const [selectedHabitId, setSelectedHabitId] = useState("");
 
   // Fetch user + habits
   useEffect(() => {
@@ -131,28 +130,11 @@ export default function Dashboard() {
           </p>
         </div>
 
-        {/* HEATMAP SECTION */}
+        {/* ⭐ COMBINED HEATMAP (GitHub Style) */}
         <div className="glass-card mb-10 fade-in">
-          <h2 className="text-xl font-semibold mb-4">Habit Heatmap</h2>
+          <h2 className="text-xl font-semibold mb-4">Combined Habit Heatmap</h2>
 
-          <select
-            className="border px-4 py-2 rounded-lg mb-5 bg-white shadow-sm"
-            value={selectedHabitId}
-            onChange={(e) => setSelectedHabitId(e.target.value)}
-          >
-            <option value="">Select a habit...</option>
-            {habitsList.map((h) => (
-              <option key={h._id} value={h._id}>
-                {h.title}
-              </option>
-            ))}
-          </select>
-
-          {selectedHabitId ? (
-            <Heatmap habitId={selectedHabitId} />
-          ) : (
-            <p className="text-gray-400">Select a habit to view progress.</p>
-          )}
+          <CombinedHeatmap />
         </div>
 
         {/* BADGES */}

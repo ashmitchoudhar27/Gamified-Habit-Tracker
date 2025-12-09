@@ -1,49 +1,81 @@
 // backend/controllers/authController.js
-const bcrypt = require("bcryptjs");
+
 const User = require("../models/User");
 const generateToken = require("../utils/generateToken");
 
-exports.register = async (req, res) => {
+// REGISTER
+exports.registerUser = async (req, res) => {
   try {
-    const { name, email, password } = req.body;
-
-    if (!name || !email || !password)
-      return res.status(400).json({ error: "Missing fields" });
+    const { username, email, password } = req.body;
 
     const exists = await User.findOne({ email });
     if (exists) return res.status(400).json({ error: "Email already registered" });
 
-    const hash = await bcrypt.hash(password, 10);
+    const user = await User.create({ username, email, password });
 
-    const user = await User.create({ name, email, password: hash });
-    const token = generateToken(user._id);
-
-    res.json({ user: user.toJSON(), token });
+    return res.json({
+      success: true,
+      token: generateToken(user._id),
+      user: {
+        _id: user._id,
+        username: user.username,
+        email: user.email,
+        xp: user.xp,
+        level: user.level,
+        badges: user.badges,
+      },
+    });
   } catch (err) {
-    console.error("REGISTER ERROR:", err);
-    res.status(500).json({ error: "Server error" });
+    console.error("registerUser error:", err);
+    return res.status(500).json({ error: "Server error" });
   }
 };
 
-exports.login = async (req, res) => {
+
+// LOGIN
+exports.loginUser = async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    const user = await User.findOne({ email });
-    if (!user) return res.status(400).json({ error: "Invalid credentials" });
+    const user = await User.findOne({ email }).select("+password");
 
-    const match = await bcrypt.compare(password, user.password);
-    if (!match) return res.status(400).json({ error: "Invalid credentials" });
+    if (!user) {
+      return res.status(401).json({ error: "Invalid credentials" });
+    }
 
-    const token = generateToken(user._id);
+    const match = await user.matchPassword(password);
 
-    res.json({ user: user.toJSON(), token });
+    if (!match) {
+      return res.status(401).json({ error: "Invalid credentials" });
+    }
+
+    user.password = undefined;
+
+    return res.json({
+      success: true,
+      token: generateToken(user._id),
+      user,
+    });
+
   } catch (err) {
-    console.error("LOGIN ERROR:", err);
-    res.status(500).json({ error: "Server error" });
+    console.error("loginUser error:", err);
+    return res.status(500).json({ error: "Server error" });
   }
 };
 
+
+// GET CURRENT USER
 exports.getMe = async (req, res) => {
-  res.json({ user: req.user });
+  try {
+    const user = await User.findById(req.user._id).select("-password");
+
+    return res.json({
+      success: true,
+      user,
+    });
+
+  } catch (err) {
+    console.error("getMe error:", err);
+    return res.status(500).json({ error: "Server error" });
+  }
 };

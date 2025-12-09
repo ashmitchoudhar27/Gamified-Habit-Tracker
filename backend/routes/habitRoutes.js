@@ -1,28 +1,23 @@
 const express = require("express");
 const router = express.Router();
-
-const { protect } = require("../middlewares/authMiddleware");
-
 const {
-  completeHabit,
-  heatmap,
-  getMyHabits,
   createHabit,
-  deleteHabit       // <- NEW
+  completeHabit,
+  getMyHabits,
+  deleteHabit,
+  getHabitHeatmap
 } = require("../controllers/habitController");
 
-// Create a habit
-router.post("/", protect, createHabit);  // <- NEW
+const { protect } = require("../middleware/authMiddleware");
 
-router.delete("/:id", protect, deleteHabit);
-
-// Get all my habits
+// ROUTES
+router.post("/", protect, createHabit);
 router.get("/my", protect, getMyHabits);
 
-// Mark habit as completed today
-router.post("/:id/complete", protect, completeHabit);
+// IMPORTANT: Heatmap route must come BEFORE dynamic routes like :id
+router.get("/:id/heatmap", protect, getHabitHeatmap);
 
-// Heatmap data
-router.get("/:id/heatmap", protect, heatmap);
+router.post("/:id/complete", protect, completeHabit);
+router.delete("/:id", protect, deleteHabit);
 
 module.exports = router;

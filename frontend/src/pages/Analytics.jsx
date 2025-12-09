@@ -1,31 +1,8 @@
-// src/pages/Analytics.jsx
-
 import React, { useEffect, useState } from "react";
 import Sidebar from "../components/Sidebar";
 import { useAuth } from "../context/AuthContext";
-
-// Chart.js Imports
-import {
-  Chart as ChartJS,
-  CategoryScale,
-  LinearScale,
-  BarElement,
-  ArcElement,
-  Tooltip,
-  Legend,
-} from "chart.js";
-
-import { Bar, Doughnut } from "react-chartjs-2";
-
-// Register components
-ChartJS.register(
-  CategoryScale,
-  LinearScale,
-  BarElement,
-  ArcElement,
-  Tooltip,
-  Legend
-);
+import "chart.js/auto";
+import { Line, Bar, Radar } from "react-chartjs-2";
 
 export default function Analytics() {
   const { token } = useAuth();
@@ -35,12 +12,12 @@ export default function Analytics() {
 
   useEffect(() => {
     const load = async () => {
-      const res = await fetch(`${API}/api/analytics`, {
+      const res = await fetch(`${API}/api/analytics/advanced`, {
         headers: { Authorization: `Bearer ${token}` },
       });
 
       const json = await res.json();
-      setData(json);
+      if (json.success) setData(json);
     };
 
     load();
@@ -52,68 +29,101 @@ export default function Analytics() {
     <div className="min-h-screen bg-gray-50 flex">
       <Sidebar />
 
-      <main className="ml-56 p-10 max-w-5xl mx-auto">
-        <h1 className="text-4xl font-bold mb-10">Analytics</h1>
+      <main className="ml-56 p-10 max-w-6xl mx-auto">
+        <h1 className="text-4xl font-bold mb-10">Analytics Dashboard</h1>
 
-        {/* WEEKLY COMPLETION BAR CHART */}
+        {/* MONTHLY TREND */}
         <div className="glass-card p-6 mb-10">
-          <h2 className="text-2xl font-semibold mb-4">Weekly Completions</h2>
-          <Bar
+          <h2 className="text-2xl font-semibold mb-4">Monthly Progress</h2>
+          <Line
             data={{
-              labels: data.weekly.map((d) => d.date),
+              labels: data.monthly.labels,
               datasets: [
                 {
                   label: "Completions",
-                  data: data.weekly.map((d) => d.count),
-                  backgroundColor: "#a855f7",
+                  data: data.monthly.values,
+                  borderColor: "#8b5cf6",
+                  backgroundColor: "rgba(139, 92, 246, 0.25)",
+                  tension: 0.3,
+                  fill: true,
                 },
               ],
             }}
           />
         </div>
 
-        {/* CATEGORY DONUT */}
+        {/* XP TREND */}
         <div className="glass-card p-6 mb-10">
-          <h2 className="text-2xl font-semibold mb-4">Category Breakdown</h2>
-          <Doughnut
+          <h2 className="text-2xl font-semibold mb-4">XP Growth</h2>
+          <Line
             data={{
-              labels: Object.keys(data.categories),
+              labels: data.xp.labels,
               datasets: [
                 {
-                  data: Object.values(data.categories),
-                  backgroundColor: ["#6366f1", "#22c55e", "#eab308", "#ef4444"],
-                  hoverOffset: 4,
+                  label: "XP",
+                  data: data.xp.values,
+                  borderColor: "#06b6d4",
+                  backgroundColor: "rgba(6, 182, 212, 0.3)",
+                  tension: 0.4,
+                  fill: true,
                 },
               ],
             }}
           />
         </div>
 
-        {/* STREAK LEADERBOARD */}
-        <div className="glass-card p-6">
-          <h2 className="text-2xl font-semibold mb-4">Top Streaks</h2>
+        {/* CATEGORY STRENGTH */}
+        <div className="glass-card p-6 mb-10">
+          <h2 className="text-2xl font-semibold mb-4">Category Strength</h2>
+          <Radar
+            data={{
+              labels: Object.keys(data.categoryStrength),
+              datasets: [
+                {
+                  label: "Strength",
+                  data: Object.values(data.categoryStrength),
+                  backgroundColor: "rgba(168, 85, 247, 0.3)",
+                  borderColor: "#a855f7",
+                },
+              ],
+            }}
+          />
+        </div>
 
-          {data.streakLeaders.map((h, idx) => (
-            <div
-              key={idx}
-              className="flex justify-between py-3 border-b last:border-none"
-            >
-              <span className="font-medium">{h.title}</span>
-              <span>🔥 {h.streak} days</span>
-            </div>
-          ))}
+        {/* TOP HABITS */}
+        <div className="glass-card p-6 mb-10">
+          <h2 className="text-2xl font-semibold mb-4">Top Habits</h2>
+          <Bar
+            data={{
+              labels: data.topHabits.map(h => h.title),
+              datasets: [
+                {
+                  label: "Completions",
+                  data: data.topHabits.map(h => h.totalCompletions),
+                  backgroundColor: "#3b82f6",
+                },
+              ],
+            }}
+          />
+        </div>
+
+        {/* STREAK INTENSITY */}
+        <div className="glass-card p-6 mb-10">
+          <h2 className="text-2xl font-semibold mb-4">Streak Intensity</h2>
+          <Bar
+            data={{
+              labels: data.streakIntensity.map(h => h.title),
+              datasets: [
+                {
+                  label: "Streak",
+                  data: data.streakIntensity.map(h => h.streak),
+                  backgroundColor: "#ef4444",
+                },
+              ],
+            }}
+          />
         </div>
       </main>
-
-      <style>{`
-        .glass-card {
-          background: rgba(255,255,255,0.65);
-          backdrop-filter: blur(18px);
-          border-radius: 18px;
-          box-shadow: 0 8px 30px rgba(0,0,0,0.06);
-          border: 1px solid rgba(255,255,255,0.4);
-        }
-      `}</style>
     </div>
   );
 }
