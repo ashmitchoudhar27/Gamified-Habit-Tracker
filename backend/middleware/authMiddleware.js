@@ -4,8 +4,10 @@ const User = require("../models/User");
 exports.protect = async (req, res, next) => {
   let token;
 
-  // Check Authorization header
-  if (req.headers.authorization && req.headers.authorization.startsWith("Bearer")) {
+  if (
+    req.headers.authorization &&
+    req.headers.authorization.startsWith("Bearer")
+  ) {
     token = req.headers.authorization.split(" ")[1];
   }
 
@@ -14,10 +16,8 @@ exports.protect = async (req, res, next) => {
   }
 
   try {
-    // Verify token
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
-    // Attach user to request
     req.user = await User.findById(decoded.id).select("-password");
 
     if (!req.user) {

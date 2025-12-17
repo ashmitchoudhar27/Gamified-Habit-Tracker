@@ -4,6 +4,8 @@ import { useNavigate } from "react-router-dom";
 import Sidebar from "../components/Sidebar";
 import { badgeDetails } from "../utils/badgeDetails";
 import CombinedHeatmap from "../components/CombinedHeatmap";
+import WeeklyReport from "../components/WeeklyReport";
+
 
 export default function Dashboard() {
   const { token, user, logout, setUser } = useAuth();
@@ -78,6 +80,8 @@ export default function Dashboard() {
   const xpRequired = level * 100;
   const progressPercent = Math.min((xp / xpRequired) * 100, 100);
 
+
+
   return (
     <div className="min-h-screen bg-[#eef1f6] flex overflow-hidden">
       <Sidebar />
@@ -129,6 +133,11 @@ export default function Dashboard() {
             XP: <b>{xp}</b> / {xpRequired} • Level <b>{level}</b>
           </p>
         </div>
+         {/* WEEKLY REPORT */}
+<div className="mb-10">
+  <WeeklyReport />
+</div>
+
 
         {/* ⭐ COMBINED HEATMAP (GitHub Style) */}
         <div className="glass-card mb-10 fade-in">
